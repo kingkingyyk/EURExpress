@@ -1,0 +1,13 @@
+DatasetFile=Infodata.txt
+ImageFliesDir=/media/shared/ImageFiles
+TrainingSetFile=/media/shared/TrainingSet.txt
+TestSetFile=/media/shared/TestSet.txt
+WvdecFileDir=/media/shared/WvDecFileDir
+TestResultDir=/media/shared/Results
+NumberOfFeatures=24
+TestAnnotationID=1
+TestAnnotationLevelFromorOnly=From
+TestAnnotationLevel=2
+NumberOfNeighbour=1
+Master=10.85.14.88:7077
+JarFilename=Eurexpress.jar
