@@ -333,9 +333,7 @@ public class ImagePreProcUtil {
 	
 	//generate label of images ("0", "1" )
 	
-	public static int [] TrainGroup(String TrainingSetFile,String TestAnnotationLevelFromorOnly,
-			int TestAnnotationID,int TestAnnotationLevel)
-	{
+	public static int [] TrainGroup(String TrainingSetFile,String TestAnnotationLevelFromorOnly, int TestAnnotationID,int TestAnnotationLevel) {
 		String [] TrainingSamples=FileIO.txtdataread(TrainingSetFile);
 		int i=0;
 		//while(TrainingSamples[i]!=null){
@@ -343,8 +341,7 @@ public class ImagePreProcUtil {
 		//}//obtain accurate number of training samples 
 		int [] TrainingGroup=new int [TrainingSamples.length];
 		int Psamples=0;
-		for(i=0;i<TrainingGroup.length;i++)
-		{
+		for(i=0;i<TrainingGroup.length;i++) {
 			//System.out.println(i);
 			String TSet[]=TrainingSamples[i].split(", ");
 			if(TestAnnotationLevelFromorOnly.equals("From"))

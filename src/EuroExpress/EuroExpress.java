@@ -45,8 +45,6 @@ public class EuroExpress {
 		TestAnnotationLevel=Integer.parseInt(p.getProperty("TestAnnotationLevel","2"));
 		NumberOfNeighbour=Integer.parseInt(p.getProperty("NumberOfNeighbour","1"));
 		
-		System.out.println(p.toString());
-		
 		sConf=new SparkConf().setAppName("Eurexpress").setMaster("spark://"+p.getProperty("Master","localhost:7077"));
 		sConf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 		sConf.setJars(new String [] {p.getProperty("Jarfilename", "Eurexpress.jar")});

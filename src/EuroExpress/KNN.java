@@ -15,40 +15,36 @@ package EuroExpress;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
-
 
 public class KNN {
 	
-	public static void main () {
-		List<Properties> dummylist=new ArrayList<>();
-		dummylist.add(EuroExpress.prop);
-		EuroExpress.sContext.parallelize(dummylist).filter(new Function<Properties, Boolean>() {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public Boolean call(Properties p) throws Exception {
-				perform(p);
-				return false;
-			}
-			
-		}).count();
+	private static class KNNClassifyData implements Serializable {
+		private static final long serialVersionUID = 1L;
+		public String TSet1;
+		public double [] FCT;
+		public double [][] FC;
+		public int [] trainingGroup;
+		public int numOfNeighbours;
 	}
 	
-	private static void perform (Properties p) {
+	public static void main () {
+		Properties p=EuroExpress.prop;
 		int i=0;
 		int [] Features=new int[Integer.parseInt(p.getProperty("NumberOfFeatures"))];
-		String SelectedFeatureFile=p.getProperty("TestResultDir")+"/SF"+p.getProperty("NumberOfFeatures")+p.getProperty("TestAnnotationID")
+		String SelectedFeatureFile=p.getProperty("TestResultDirOnDriver")+"/SF"+p.getProperty("NumberOfFeatures")+p.getProperty("TestAnnotationID")
 		+p.getProperty("TestAnnotationLevelFromorOnly")+p.getProperty("TestAnnotationLevel")+".txt";
 		System.out.println("Using SelectedFeatureFile: "+SelectedFeatureFile);
 		System.out.println("Reading Training set classify information and generating group vector....");
-		String [] TrainingSamples=FileIO.txtdataread(p.getProperty("TrainingSetFile"));
-		int [] TrainingGroup=ImagePreProcUtil.TrainGroup(p.getProperty("TrainingSetFile"),p.getProperty("TestAnnotationLevelFromorOnly"),
-				Integer.parseInt(p.getProperty("TestAnnotationID")),Integer.parseInt(p.getProperty("TestAnnotationLevel")));
+		
+		String [] TrainingSamples=FileIO.txtdataread(p.getProperty("TrainingSetFileOnDriver"));
+		int [] TrainingGroup=ImagePreProcUtil.TrainGroup(p.getProperty("TrainingSetFileOnDriver"),p.getProperty("TestAnnotationLevelFromorOnly"),Integer.parseInt(p.getProperty("TestAnnotationID")),Integer.parseInt(p.getProperty("TestAnnotationLevel")));
 		//for(int ttt=0;ttt<10;ttt++){
 		//System.out.println(TrainingGroup[ttt]);}
 		double [][] FC=new double [TrainingGroup.length][Integer.parseInt(p.getProperty("NumberOfFeatures"))];
@@ -61,10 +57,11 @@ public class KNN {
 		}
 		int dotint=TrainingGroup.length/10;
 		int dti=dotint;
+		
 		for(i=0;i<TrainingGroup.length;i++)
 		{
 			String TSet[]=TrainingSamples[i].split(", ");
-			String WvDecFile=p.getProperty("WvdecFileDir")+"/e"+TSet[1]+"_1.dat";
+			String WvDecFile=p.getProperty("WvdecFileDirOnDriver")+"/e"+TSet[1]+"_1.dat";
 			double[] C=FileIO.Xread(WvDecFile);
 			for (int j=0;j<Integer.parseInt(p.getProperty("NumberOfFeatures"));j++)
 			{
@@ -72,44 +69,64 @@ public class KNN {
 			}	
 			dti--;
 			if(dti==0){
-			System.out.print(".");
-			dti=dotint;}
+				//System.out.print(".");
+				dti=dotint;
+			}
 		}
 		System.out.println("Training Set Feature Matrix generated");
-		String [] TestSamples=FileIO.txtdataread(p.getProperty("TestSetFile"));
+		String [] TestSamples=FileIO.txtdataread(p.getProperty("TestSetFileOnDriver"));
 		//System.out.println(TestSamples.length);
-		double []FCT=new double[Integer.parseInt(p.getProperty("NumberOfFeatures"))];
-		String ClassifyResultFile=p.getProperty("TestResultDir")+"/TestResultOf"+p.getProperty("NumberOfFeatures")+p.getProperty("TestAnnotationID")
+		//double []FCT=new double[Integer.parseInt(p.getProperty("NumberOfFeatures"))];
+		String ClassifyResultFile=p.getProperty("TestResultDirOnDriver")+"/TestResultOf"+p.getProperty("NumberOfFeatures")+p.getProperty("TestAnnotationID")
 		+p.getProperty("TestAnnotationLevelFromorOnly")+p.getProperty("TestAnnotationLevel")+".txt";
 		try { 
 			FileWriter fw = new FileWriter(ClassifyResultFile);
 			PrintWriter out = new PrintWriter(fw); 
-			out.println("TestSetData: "+p.getProperty("TestSetFile"));
+			out.println("TestSetData: "+p.getProperty("TestSetFileOnDriver"));
 			out.println("NumberOfFeatures: "+p.getProperty("NumberOfFeatures"));
 			for(i=0;i<3;i++){
-			out.println(SelectedFeature[i]);}	
-			for (i=0;i<TestSamples.length;i++)
-			{	
-				String TSet[]=TestSamples[i].split(", ");
-				String WvDecFile=p.getProperty("WvdecFileDir")+"/e"+TSet[1]+"_1.dat";
-				double[] TC=FileIO.Xread(WvDecFile);
-				for (int j=0;j<Integer.parseInt(p.getProperty("NumberOfFeatures"));j++)
-				{
-					FCT[j]=TC[Features[j]];
-				}
-				int Class=KNNclassify(FCT,FC,TrainingGroup,Integer.parseInt(p.getProperty("NumberOfNeighbour")));
-				//System.out.println(Class);
-				dti--;
-				if(dti<=0){
-				System.out.print(".");
-				dti=dotint;}
-				out.println("e"+TSet[1]+", "+Integer.toString(Class));
+				out.println(SelectedFeature[i]);
 			}
+		
+			List<KNNClassifyData> dList=new ArrayList<>();
+			for (i=0;i<TestSamples.length;i++) {
+				KNNClassifyData dat=new KNNClassifyData();
+				
+				String TSet[]=TestSamples[i].split(", ");
+				String WvDecFile=p.getProperty("WvdecFileDirOnDriver")+"/e"+TSet[1]+"_1.dat";
+				double[] TC=FileIO.Xread(WvDecFile);
+				dat.TSet1=TSet[1];
+				dat.FCT=new double [Integer.parseInt(p.getProperty("NumberOfFeatures"))];
+				for (int j=0;j<Integer.parseInt(p.getProperty("NumberOfFeatures"));j++) {
+					dat.FCT[j]=TC[Features[j]];
+				}
+				dat.FC=FC;
+				dat.trainingGroup=TrainingGroup;
+				dat.numOfNeighbours=Integer.parseInt(p.getProperty("NumberOfNeighbour"));
+				dList.add(dat);
+			}
+
+			JavaRDD<String> classified=EuroExpress.sContext.parallelize(dList).map(new Function<KNNClassifyData,String>() {
+				private static final long serialVersionUID = 1L;
+
+				@Override
+				public String call(KNNClassifyData dat) throws Exception {
+					int Class=KNNclassify(dat.FCT,dat.FC,dat.trainingGroup,dat.numOfNeighbours);
+					return "e"+dat.TSet1+", "+Integer.toString(Class);
+				}
+				
+			});
+			
+			List<String> value=classified.collect();
+			for (i=0;i<value.size();i++) {
+				out.println(value.get(i));
+			}
+			
 			out.close(); 
-			fw.close(); 
-			} catch (IOException e) { 
+			fw.close();
+		} catch (IOException e) { 
 			e.printStackTrace(); 
-			} 
+		} 
 		System.out.println("Test Set Classify accompolished");
 		System.out.println("Result File is: "+ClassifyResultFile);
 		//System.out.println("FC.length is "+FC.length);

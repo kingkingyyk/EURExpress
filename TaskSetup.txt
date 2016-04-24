@@ -11,3 +11,8 @@ TestAnnotationLevel=2
 NumberOfNeighbour=1
 Master=10.85.14.88:7077
 JarFilename=Eurexpress.jar
+
+TestSetFileOnDriver=F:/test/TestSet.txt
+TrainingSetFileOnDriver=F:/test/TrainingSet.txt
+WvdecFileDirOnDriver=F:/test/WvDecFileDir
+TestResultDirOnDriver=F:/test/Results
