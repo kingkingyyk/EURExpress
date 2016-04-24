@@ -1,7 +1,7 @@
 # EURExpress Spark
-An attempt to implement Apache Spark to increase the speed of existing EURExpress.
+An attempt to implement Apache Spark to parallelize the existing EURExpress.
 
-See the project here : http://chr21.molgen.mpg.de/projects/eurexpress.html
+See the project here : http://www.eurexpress.org/ee/
 
 To compile :
 
