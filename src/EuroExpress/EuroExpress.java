@@ -6,6 +6,11 @@ import java.util.Properties;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.SparkConf;
 
+// Execution steps :
+//  - Modify the TaskSetup file
+//    - The IP address of master
+//    - Add shared folder (image files, etc) to all the slaves node
+//    - The executable jar file's name. (should be the jar itself).
 public class EuroExpress {
 
 	private static String TaskSetFile="TaskSetup.txt";
@@ -47,11 +52,15 @@ public class EuroExpress {
 		
 		sConf=new SparkConf().setAppName("Eurexpress").setMaster("spark://"+p.getProperty("Master","localhost:7077"));
 		sConf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+		//sConf.set("spark.dynamicAllocation.maxExecutors", "1");
 		sConf.setJars(new String [] {p.getProperty("Jarfilename", "Eurexpress.jar")});
 		sContext=new JavaSparkContext(sConf);
+		long before=System.currentTimeMillis();
 		ImagePreProcUtil.main();
 		FeatureSelection.main();
 		KNN.main();
+		long after=System.currentTimeMillis();
+		System.out.println((after-before)+"ms taken.");
 	}
 	
 }

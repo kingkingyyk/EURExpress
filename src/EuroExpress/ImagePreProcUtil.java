@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -142,28 +143,40 @@ public class ImagePreProcUtil {
     JLabel label = new JLabel(icon, JLabel.CENTER);
     JOptionPane.showMessageDialog(null, label, "icon", -1);
 }	*/
+	private static class ImageData implements Serializable {
+		private static final long serialVersionUID = 1L;
+		public String s;
+		public BufferedImage img;
+	}
 	
 	public static void main() {
 		BufferedReader inFile;
 		try {
 	    	inFile=new BufferedReader(new FileReader(EuroExpress.DatasetFile));
 	    	String InfoData;
-	    	List<String> dList=new ArrayList<>();
+	    	List<ImageData> dList=new ArrayList<>();
 	    	HashMap<String,String> WcDecFileMap=new HashMap<>();
 			while ((InfoData=inFile.readLine() )!= null){
 				String Records[]=InfoData.split(", ");
 				//System.out.println(InfoData);
-				String s=EuroExpress.ImageFliesDir+"/e"+Records[1]+"_1.jpg";
-				dList.add(s);
-				WcDecFileMap.put(s,EuroExpress.WvdecFileDir+"/e"+Records[1]+"_1.dat");
+				ImageData id=new ImageData();
+				id.s=EuroExpress.ImageFliesDir+"/e"+Records[1]+"_1.jpg";
+				id.img=loadImage("D:/EurData/ImageFiles"+"/e"+Records[1]+"_1.jpg");
+				dList.add(id);
+				WcDecFileMap.put(id.s,EuroExpress.WvdecFileDir+"/e"+Records[1]+"_1.dat");
 			}
 			inFile.close();
 			
-			EuroExpress.sContext.parallelize(dList).filter(new Function<String, Boolean>() {
+			EuroExpress.sContext.parallelize(dList).filter(new Function<ImageData, Boolean>() {
 				private static final long serialVersionUID = 1L;
 
-				public Boolean call(String s) throws IOException {
-					  FileIO.XWrite(WcDecFileMap.get(s), ImageReadDec(loadImage(s)));
+				public Boolean call(ImageData im) throws IOException {
+						//try {
+				    	//Class.forName("java.awt.color.ICC_ColorSpace");
+				    	//Class.forName("sun.java2d.cmm.lcms.LCMS");
+						//} catch (Exception e) {}
+					  //System.out.println(s);
+					  FileIO.XWrite(WcDecFileMap.get(im.s), ImageReadDec(im.img));
 					  return false;
 				  }
 			}).count();
